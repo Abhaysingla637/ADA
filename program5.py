@@ -1,78 +1,83 @@
+# Fractional Knapsack and Job Scheduling
+
 from typing import List
 
-def fractional_knapsack(weights: List[int], values: List[int], capacity: int) -> float:
-    """
-    Calculates the maximum attainable profit for the fractional knapsack problem.
-    """
-    # Create a list of tuples containing (value/weight ratio, weight, value)
-    items = [(values[i] / weights[i], weights[i], values[i]) for i in range(len(weights))]
-    
-    # Sort items in descending order based on the value-to-weight ratio
-    items.sort(key=lambda x: x[0], reverse=True)
-    
-    max_profit = 0.0
-    current_capacity = capacity
-    
-    for ratio, weight, value in items:
-        if current_capacity >= weight:
-            # If the whole item fits, take it entirely
-            max_profit += value
-            current_capacity -= weight
-        else:
-            # If only a fraction fits, take the remaining capacity's worth
-            max_profit += ratio * current_capacity
-            break # Knapsack is full
-            
-    return max_profit
+# 1. Fractional Knapsack
 
+def fractional_knapsack(weights: List[int], values: List[int], capacity: int) -> float:
+
+    items = []
+
+    for i in range(len(weights)):
+        ratio = values[i] / weights[i]
+        items.append((ratio, weights[i], values[i]))
+
+    items.sort(reverse=True)
+
+    profit = 0
+
+    for ratio, weight, value in items:
+
+        if capacity >= weight:
+            profit += value
+            capacity -= weight
+
+        else:
+            profit += ratio * capacity
+            break
+
+    return profit
+
+# 2. Job Scheduling
 
 class Job:
-    """Class to represent a job with an ID, deadline, and profit."""
-    def __init__(self, job_id: int, deadline: int, profit: int):
-        self.job_id = job_id
+    def __init__(self, id, deadline, profit):
+        self.id = id
         self.deadline = deadline
         self.profit = profit
 
+
 def job_scheduling(jobs: List[Job]) -> List[int]:
-    """
-    Calculates the optimal job sequence to maximize profit where each job takes 1 unit of time.
-    """
-    # Sort jobs in descending order of profit to greedily pick the most profitable first
-    jobs.sort(key=lambda x: x.profit, reverse=True)
-    
-    # Find the maximum deadline to create a time slot array
-    max_deadline = max(job.deadline for job in jobs) if jobs else 0
-    
-    # Array to keep track of free time slots (False means free)
-    # Size is max_deadline + 1 to use 1-based indexing for days
-    time_slots = [False] * (max_deadline + 1)
-    
-    scheduled_sequence = []
-    
+
+    jobs = sorted(jobs, key=lambda x: x.profit, reverse=True)
+
+    max_deadline = max((job.deadline for job in jobs), default=0)
+
+    slots = [-1] * max_deadline
+
     for job in jobs:
-        # Try to schedule the job as late as possible before its deadline
-        for j in range(job.deadline, 0, -1):
-            if not time_slots[j]:
-                # Found a free slot, schedule the job
-                time_slots[j] = True
-                scheduled_sequence.append(job.job_id)
+
+        for j in range(job.deadline - 1, -1, -1):
+
+            if slots[j] == -1:
+                slots[j] = job.id
                 break
-                
-    return scheduled_sequence
 
-# Example Usage:
-if __name__ == "__main__":
-    # Fractional Knapsack Example
-    weights = [10, 20, 30]
-    values = [60, 100, 120]
-    capacity = 50
-    print(f"Max Profit (Knapsack): {fractional_knapsack(weights, values, capacity)}")
+    return [x for x in slots if x != -1]
 
-    # Job Scheduling Example
-    job_list = [
-        Job(1, 4, 20),
-        Job(2, 1, 10),
-        Job(3, 1, 40),
-        Job(4, 1, 30)
-    ]
-    print(f"Optimal Job Sequence: {job_scheduling(job_list)}")
+
+# Main Program
+
+weights = [10, 20, 30]
+values = [60, 100, 120]
+capacity = 50
+
+print("Fractional Knapsack")
+print("Maximum Profit:", fractional_knapsack(weights, values, capacity))
+
+
+jobs = [
+    Job(1, 2, 100),
+    Job(2, 1, 19),
+    Job(3, 2, 27),
+    Job(4, 1, 25),
+    Job(5, 3, 15)
+]
+
+sequence = job_scheduling(jobs)
+
+total_profit = sum(job.profit for job in jobs if job.id in sequence)
+
+print("\nJob Scheduling")
+print("Optimal Job Sequence:", sequence)
+print("Maximum Profit:", total_profit)
